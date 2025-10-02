@@ -3,7 +3,7 @@ const Groq = require("groq-sdk"); // CommonJS import
 const { success, error } = require("../utils/response");
 const { completionSchema } = require("../validators/ai.validators");
 
-
+//chcking
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
