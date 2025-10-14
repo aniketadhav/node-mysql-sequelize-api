@@ -6,6 +6,7 @@ const {
   searchSchema,
   answerWithWebSchema,
 } = require("../validators/web.validators");
+const { searchOpenApi } = require("../services/openSearch");
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -58,11 +59,6 @@ async function searchBing({ query, num, site }) {
   return items;
 }
 
-async function runSearch(opts) {
-  if (opts.provider === "bing") return searchBing(opts);
-  return searchSerpApi(opts); // default
-}
-
 // ---- Endpoints ---------------------------------------------------------
 
 // POST /api/web/search
@@ -90,7 +86,7 @@ exports.search = async (req, res, next) => {
 };
 
 // POST /api/ai/answer-with-web
-// 1) search web 2) feed top snippets to Groq 3) return grounded answer + cites
+// 1) search web | With (runSearch) or Without (runOpenSearch) API Key, 2) feed top snippets to Groq 3) return grounded answer + cites
 exports.answerWithWeb = async (req, res, next) => {
   try {
     const { value, error: valErr } = answerWithWebSchema.validate(req.body);
@@ -103,7 +99,7 @@ exports.answerWithWeb = async (req, res, next) => {
     }
 
     // 1) Search
-    const results = await runSearch({ query, num, provider });
+    const results = await runOpenSearch({ query, num, provider });
 
     // 2) Build short context (cap tokens/chars)
     const contextBlocks = results
@@ -165,3 +161,12 @@ Write a concise answer (bulleted if helpful). Include source markers [#n] next t
     next(e);
   }
 };
+
+async function runOpenSearch(opts) {
+  return searchOpenApi(opts); // always open DuckDuckGo
+}
+
+async function runSearch(opts) {
+  if (opts.provider === "bing") return searchBing(opts);
+  return searchSerpApi(opts); // default
+}
